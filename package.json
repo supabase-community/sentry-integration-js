@@ -1,0 +1,35 @@
+{
+  "name": "@supabase/sentry-js-integration",
+  "version": "0.0.0",
+  "description": "Supabase integration for Sentry JavaScript SDK",
+  "license": "MIT",
+  "repository": "@supabase/sentry-js-integration",
+  "author": {
+    "name": "Kamil Ogórek",
+    "email": "kamil@supabase.io",
+    "url": "https://supabase.com"
+  },
+  "type": "module",
+  "exports": {
+    "types": "./index.d.ts",
+    "default": "./index.js"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:watch": "node --watch --test tests/*.test.js"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "peerDependencies": {
+    "@supabase/supabase-js": "2.x"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "2.x"
+  }
+}
