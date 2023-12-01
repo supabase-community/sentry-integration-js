@@ -18,27 +18,12 @@ test("Breadcrumbs", async (t) => {
     integration = undefined; // Makes sure that each test assigns its own instance
   });
 
-  await t.test("Should not capture breadcrumbs by default", async () => {
+  await t.test("Should capture breadcrumbs by default", async () => {
     const supabase = initSupabase(
-      () => new Response(JSON.stringify({ id: 42 })),
+      () => new Response(JSON.stringify({ id: 42 }))
     );
     const { addBreadcrumb } = initSentry(
-      (integration = new SupabaseIntegration(Supabase.SupabaseClient)),
-    );
-
-    await supabase.from("mock-table").select("*").eq("id", 42);
-
-    strictEqual(addBreadcrumb.mock.calls.length, 0);
-  });
-
-  await t.test("Should capture breadcrumbs if they are enabled", async () => {
-    const supabase = initSupabase(
-      () => new Response(JSON.stringify({ id: 42 })),
-    );
-    const { addBreadcrumb } = initSentry(
-      (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
-        breadcrumbs: true,
-      })),
+      (integration = new SupabaseIntegration(Supabase.SupabaseClient))
     );
 
     await supabase.from("mock-table").select().eq("id", 42);
@@ -49,71 +34,127 @@ test("Breadcrumbs", async (t) => {
 
     strictEqual(addBreadcrumb.mock.calls.length, 5);
 
-    deepStrictEqual(addBreadcrumb.mock.calls[0].arguments, [
-      {
-        ...COMMON_BREADCRUMB_PAYLOAD,
-        category: "db.select",
-        data: {
-          query: {
-            select: "*",
-            id: "eq.42",
-          },
-        },
+    deepStrictEqual(addBreadcrumb.mock.calls[0].arguments[0], {
+      ...COMMON_BREADCRUMB_PAYLOAD,
+      category: "db.select",
+      data: {
+        query: ["select(*)", "eq(id, 42)"],
       },
-    ]);
+    });
 
-    deepStrictEqual(addBreadcrumb.mock.calls[1].arguments, [
-      {
-        ...COMMON_BREADCRUMB_PAYLOAD,
-        category: "db.insert",
-        data: {
-          body: {
-            id: 42,
-          },
+    deepStrictEqual(addBreadcrumb.mock.calls[1].arguments[0], {
+      ...COMMON_BREADCRUMB_PAYLOAD,
+      category: "db.insert",
+      data: {
+        body: {
+          id: 42,
         },
       },
-    ]);
+    });
 
-    deepStrictEqual(addBreadcrumb.mock.calls[2].arguments, [
-      {
-        ...COMMON_BREADCRUMB_PAYLOAD,
-        category: "db.upsert",
-        data: {
-          query: {
-            select: "*",
-          },
-          body: {
-            id: 42,
-          },
+    deepStrictEqual(addBreadcrumb.mock.calls[2].arguments[0], {
+      ...COMMON_BREADCRUMB_PAYLOAD,
+      category: "db.upsert",
+      data: {
+        query: ["select(*)"],
+        body: {
+          id: 42,
         },
       },
-    ]);
+    });
 
-    deepStrictEqual(addBreadcrumb.mock.calls[3].arguments, [
-      {
-        ...COMMON_BREADCRUMB_PAYLOAD,
-        category: "db.update",
-        data: {
-          query: {
-            id: "eq.42",
-          },
-          body: {
-            id: 1337,
-          },
+    deepStrictEqual(addBreadcrumb.mock.calls[3].arguments[0], {
+      ...COMMON_BREADCRUMB_PAYLOAD,
+      category: "db.update",
+      data: {
+        query: ["eq(id, 42)"],
+        body: {
+          id: 1337,
         },
       },
-    ]);
+    });
 
-    deepStrictEqual(addBreadcrumb.mock.calls[4].arguments, [
-      {
-        ...COMMON_BREADCRUMB_PAYLOAD,
-        category: "db.delete",
-        data: {
-          query: {
-            id: "eq.42",
-          },
-        },
+    deepStrictEqual(addBreadcrumb.mock.calls[4].arguments[0], {
+      ...COMMON_BREADCRUMB_PAYLOAD,
+      category: "db.delete",
+      data: {
+        query: ["eq(id, 42)"],
       },
-    ]);
+    });
   });
+
+  await t.test(
+    "Should not capture breadcrumbs if breadcrumbs are disabled",
+    async () => {
+      const supabase = initSupabase(
+        () => new Response(JSON.stringify({ id: 42 }))
+      );
+      const { addBreadcrumb } = initSentry(
+        (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
+          breadcrumbs: false,
+        }))
+      );
+
+      await supabase.from("mock-table").select("*").eq("id", 42);
+
+      strictEqual(addBreadcrumb.mock.calls.length, 0);
+    }
+  );
+
+  await t.test(
+    "Should be able to redact request body in breadcrumbs",
+    async () => {
+      const supabase = initSupabase(
+        () => new Response(JSON.stringify({ id: 42 }))
+      );
+      const { addBreadcrumb } = initSentry(
+        (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
+          breadcrumbs: true,
+          errors: true,
+          sanitizeBody(key, value) {
+            switch (key) {
+              case "password":
+                return "<redacted>";
+              case "token":
+                return "<nope>";
+              case "secret":
+                return "<uwatm8>";
+              default: {
+                return value;
+              }
+            }
+          },
+        }))
+      );
+
+      await supabase
+        .from("mock-table")
+        .insert({ user: "picklerick", password: "whoops" });
+      await supabase
+        .from("mock-table")
+        .upsert({ user: "picklerick", token: "whoops" });
+      await supabase
+        .from("mock-table")
+        .update({ user: "picklerick", secret: "whoops" })
+        .eq("id", 42);
+
+      strictEqual(addBreadcrumb.mock.calls.length, 3);
+
+      var arg = addBreadcrumb.mock.calls[0].arguments[0];
+      deepStrictEqual(arg.data.body, {
+        user: "picklerick",
+        password: "<redacted>",
+      });
+      var arg = addBreadcrumb.mock.calls[1].arguments[0];
+      deepStrictEqual(arg.data.body, {
+        user: "picklerick",
+        token: "<nope>",
+      });
+      var arg = addBreadcrumb.mock.calls[2].arguments[0];
+      deepStrictEqual(arg.data.body, {
+        user: "picklerick",
+        secret: "<uwatm8>",
+      });
+    }
+  );
 });

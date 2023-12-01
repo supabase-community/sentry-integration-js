@@ -1,4 +1,5 @@
 import { type SupabaseClient } from "@supabase/supabase-js";
+import { type PostgrestBuilder } from "@supabase/postgrest-js";
 
 /**
 @returns Sentry JavaScript SDK Integration that can be used to instrument Supabase JavaScript SDK instrumentation.
@@ -20,8 +21,6 @@ Sentry.init({
 });
 ```
 */
-
-// TODO: Update types once everything is done
 export class SupabaseIntegration {
   constructor(
     clientConstructor: SupabaseClient,
@@ -29,6 +28,10 @@ export class SupabaseIntegration {
       tracing?: boolean;
       errors?: boolean;
       breadcrumbs?: boolean;
-    } = { tracing: true, errors: false, breadcrumbs = false },
+      operations?: ["select" | "insert" | "upsert" | "update" | "delete"][];
+      shouldCreateSpan: (builder: PostgrestBuilder<unknown>) => boolean;
+      shouldCreateBreadcrumb: (builder: PostgrestBuilder<unknown>) => boolean;
+      sanitizeBody(key: string, value: unknown): any;
+    }
   );
 }

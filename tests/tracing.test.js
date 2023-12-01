@@ -12,7 +12,7 @@ const COMMON_SPAN_DATA = {
   "db.schema": "public",
   "db.table": "mock-table",
   "db.url": "http://mock-url.com",
-  "db.sdk": "supabase-js-node/2.38.5",
+  "db.sdk": "supabase-js-node/2.39.0",
 };
 
 test("Tracing", async (t) => {
@@ -27,118 +27,114 @@ test("Tracing", async (t) => {
     "Should capture spans for all operations with default configuration",
     async () => {
       const supabase = initSupabase(
-        () => new Response(JSON.stringify({ id: 42 })),
+        () => new Response(JSON.stringify({ id: 42 }))
       );
       const { setHttpStatus, finish, startChild } = initSentry(
-        (integration = new SupabaseIntegration(Supabase.SupabaseClient)),
+        (integration = new SupabaseIntegration(Supabase.SupabaseClient))
       );
 
-      await supabase.from("mock-table").select().eq("id", 42);
+      await supabase
+        .from("mock-table")
+        .select()
+        .lt("id", 42)
+        .gt("id", 20)
+        .not("id", "eq", 32);
       await supabase.from("mock-table").insert({ id: 42 });
-      await supabase.from("mock-table").upsert({ id: 42 }).select();
-      await supabase.from("mock-table").update({ id: 1337 }).eq("id", 42);
+      await supabase.from("mock-table").upsert({ id: 42 }).select("id,name");
+      await supabase
+        .from("mock-table")
+        .update({ id: 1337 })
+        .eq("id", 42)
+        .or("id.eq.8")
+        .or("id.eq.42", { referencedTable: "foo" });
       await supabase.from("mock-table").delete().eq("id", 42);
       strictEqual(startChild.mock.calls.length, 5);
       strictEqual(setHttpStatus.mock.calls.length, 5);
       strictEqual(finish.mock.calls.length, 5);
 
-      deepStrictEqual(startChild.mock.calls[0].arguments, [
-        {
-          ...COMMON_SPAN_PAYLOAD,
-          data: {
-            ...COMMON_SPAN_DATA,
-            "db.query": {
-              select: "*",
-              id: "eq.42",
-            },
-          },
-          description: "from(mock-table)",
-          op: "db.select",
+      deepStrictEqual(startChild.mock.calls[0].arguments[0], {
+        ...COMMON_SPAN_PAYLOAD,
+        data: {
+          ...COMMON_SPAN_DATA,
+          "db.query": [
+            "select(*)",
+            "lt(id, 42)",
+            "gt(id, 20)",
+            "not(id, eq.32)",
+          ],
         },
-      ]);
+        description: "from(mock-table)",
+        op: "db.select",
+      });
 
-      deepStrictEqual(startChild.mock.calls[1].arguments, [
-        {
-          ...COMMON_SPAN_PAYLOAD,
-          data: {
-            ...COMMON_SPAN_DATA,
-            "db.body": {
-              id: 42,
-            },
+      deepStrictEqual(startChild.mock.calls[1].arguments[0], {
+        ...COMMON_SPAN_PAYLOAD,
+        data: {
+          ...COMMON_SPAN_DATA,
+          "db.body": {
+            id: 42,
           },
-          description: "from(mock-table)",
-          op: "db.insert",
         },
-      ]);
+        description: "from(mock-table)",
+        op: "db.insert",
+      });
 
-      deepStrictEqual(startChild.mock.calls[2].arguments, [
-        {
-          ...COMMON_SPAN_PAYLOAD,
-          data: {
-            ...COMMON_SPAN_DATA,
-            "db.body": {
-              id: 42,
-            },
-            "db.query": {
-              select: "*",
-            },
+      deepStrictEqual(startChild.mock.calls[2].arguments[0], {
+        ...COMMON_SPAN_PAYLOAD,
+        data: {
+          ...COMMON_SPAN_DATA,
+          "db.body": {
+            id: 42,
           },
-          description: "from(mock-table)",
-          op: "db.upsert",
+          "db.query": ["select(id,name)"],
         },
-      ]);
+        description: "from(mock-table)",
+        op: "db.upsert",
+      });
 
-      deepStrictEqual(startChild.mock.calls[3].arguments, [
-        {
-          ...COMMON_SPAN_PAYLOAD,
-          data: {
-            ...COMMON_SPAN_DATA,
-            "db.query": {
-              id: "eq.42",
-            },
-            "db.body": {
-              id: 1337,
-            },
+      deepStrictEqual(startChild.mock.calls[3].arguments[0], {
+        ...COMMON_SPAN_PAYLOAD,
+        data: {
+          ...COMMON_SPAN_DATA,
+          "db.query": ["eq(id, 42)", "or(id.eq.8)", "foo.or(id.eq.42)"],
+          "db.body": {
+            id: 1337,
           },
-          description: "from(mock-table)",
-          op: "db.update",
         },
-      ]);
+        description: "from(mock-table)",
+        op: "db.update",
+      });
 
-      deepStrictEqual(startChild.mock.calls[4].arguments, [
-        {
-          ...COMMON_SPAN_PAYLOAD,
-          data: {
-            ...COMMON_SPAN_DATA,
-            "db.query": {
-              id: "eq.42",
-            },
-          },
-          description: "from(mock-table)",
-          op: "db.delete",
+      deepStrictEqual(startChild.mock.calls[4].arguments[0], {
+        ...COMMON_SPAN_PAYLOAD,
+        data: {
+          ...COMMON_SPAN_DATA,
+          "db.query": ["eq(id, 42)"],
         },
-      ]);
+        description: "from(mock-table)",
+        op: "db.delete",
+      });
 
       deepStrictEqual(
         setHttpStatus.mock.calls.map((c) => c.arguments),
-        [[200], [200], [200], [200], [200]],
+        [[200], [200], [200], [200], [200]]
       );
 
       deepStrictEqual(
         finish.mock.calls.map((c) => c.arguments),
-        [[], [], [], [], []],
+        [[], [], [], [], []]
       );
-    },
+    }
   );
 
   await t.test("Should not capture spans if tracing is disabled", async () => {
     const supabase = initSupabase(
-      () => new Response(JSON.stringify({ id: 42 })),
+      () => new Response(JSON.stringify({ id: 42 }))
     );
     const { startChild, setHttpStatus, finish } = initSentry(
       (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
         tracing: false,
-      })),
+      }))
     );
 
     await supabase.from("mock-table").select("*").eq("id", 42);
@@ -152,10 +148,10 @@ test("Tracing", async (t) => {
     "Should set correct span status based on response status",
     async () => {
       const supabase = initSupabase(
-        () => new Response(JSON.stringify("Invalid response"), { status: 404 }),
+        () => new Response(JSON.stringify("Invalid response"), { status: 404 })
       );
       const { setHttpStatus, finish, startChild } = initSentry(
-        (integration = new SupabaseIntegration(Supabase.SupabaseClient)),
+        (integration = new SupabaseIntegration(Supabase.SupabaseClient))
       );
 
       await supabase.from("mock-table").select("*").eq("id", 42);
@@ -167,12 +163,12 @@ test("Tracing", async (t) => {
 
       deepStrictEqual(setHttpStatus.mock.calls[0].arguments, [404]);
       deepStrictEqual(setHttpStatus.mock.calls[1].arguments, [404]);
-    },
+    }
   );
 
   await t.test("Should be able to filter spans", async () => {
     const supabase = initSupabase(
-      () => new Response(JSON.stringify({ id: 42 })),
+      () => new Response(JSON.stringify({ id: 42 }))
     );
     const { setHttpStatus, finish, startChild } = initSentry(
       (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
@@ -184,7 +180,7 @@ test("Tracing", async (t) => {
           }
           return true;
         },
-      })),
+      }))
     );
 
     await supabase.from("mock-table").select("*").eq("id", 42);
@@ -194,46 +190,64 @@ test("Tracing", async (t) => {
     strictEqual(setHttpStatus.mock.calls.length, 1);
     strictEqual(finish.mock.calls.length, 1);
 
-    deepStrictEqual(
-      startChild.mock.calls[0].arguments[0].data["db.query"].id,
-      "eq.1337",
-    );
+    var arg = startChild.mock.calls[0].arguments[0];
+    deepStrictEqual(arg.data["db.query"], ["select(*)", "eq(id, 1337)"]);
   });
 
-  await t.test("Should be able to redact spans data", async () => {
-    const supabase = initSupabase(
-      () => new Response(JSON.stringify({ id: 42 })),
-    );
-    const { setHttpStatus, finish, startChild } = initSentry(
-      (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
-        sanitizeData(data) {
-          if (data["db.body"]?.password) {
-            data["db.body"].password = "<redacted>";
-          }
-          if (data["db.query"]?.password) {
-            data["db.query"].password = "<redacted>";
-          }
-          return data;
-        },
-      })),
-    );
+  await t.test(
+    "Should be able to redact request body in spans data",
+    async () => {
+      const supabase = initSupabase(
+        () => new Response(JSON.stringify({ id: 42 }))
+      );
+      const { setHttpStatus, finish, startChild } = initSentry(
+        (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
+          sanitizeBody(key, value) {
+            switch (key) {
+              case "password":
+                return "<redacted>";
+              case "token":
+                return "<nope>";
+              case "secret":
+                return "<uwatm8>";
+              default: {
+                return value;
+              }
+            }
+          },
+        }))
+      );
 
-    await supabase
-      .from("mock-table")
-      .insert({ user: "picklerick", password: "whoops" });
-    await supabase.from("mock-table").select("*").eq("password", "whoops");
+      await supabase
+        .from("mock-table")
+        .insert({ user: "picklerick", password: "whoops" });
+      await supabase
+        .from("mock-table")
+        .upsert({ user: "picklerick", token: "whoops" });
+      await supabase
+        .from("mock-table")
+        .update({ user: "picklerick", secret: "whoops" })
+        .eq("id", 42);
 
-    strictEqual(startChild.mock.calls.length, 2);
-    strictEqual(setHttpStatus.mock.calls.length, 2);
-    strictEqual(finish.mock.calls.length, 2);
+      strictEqual(startChild.mock.calls.length, 3);
+      strictEqual(setHttpStatus.mock.calls.length, 3);
+      strictEqual(finish.mock.calls.length, 3);
 
-    deepStrictEqual(startChild.mock.calls[0].arguments[0].data["db.body"], {
-      user: "picklerick",
-      password: "<redacted>",
-    });
-    deepStrictEqual(startChild.mock.calls[1].arguments[0].data["db.query"], {
-      select: "*",
-      password: "<redacted>",
-    });
-  });
+      var arg = startChild.mock.calls[0].arguments[0];
+      deepStrictEqual(arg.data["db.body"], {
+        user: "picklerick",
+        password: "<redacted>",
+      });
+      var arg = startChild.mock.calls[1].arguments[0];
+      deepStrictEqual(arg.data["db.body"], {
+        user: "picklerick",
+        token: "<nope>",
+      });
+      var arg = startChild.mock.calls[2].arguments[0];
+      deepStrictEqual(arg.data["db.body"], {
+        user: "picklerick",
+        secret: "<uwatm8>",
+      });
+    }
+  );
 });

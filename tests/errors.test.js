@@ -1,5 +1,5 @@
 import { test, afterEach } from "node:test";
-import { ok, strictEqual } from "node:assert";
+import { deepStrictEqual, ok, strictEqual } from "node:assert";
 import { initSentry, initSupabase } from "./mocks.js";
 
 import { SupabaseIntegration } from "../index.js";
@@ -15,10 +15,10 @@ test("Errors", async (t) => {
 
   await t.test("Do not capture errors by default", async () => {
     const supabase = initSupabase(
-      () => new Response(JSON.stringify({ id: 42 })),
+      () => new Response(JSON.stringify({ id: 42 }))
     );
     const { captureException } = initSentry(
-      (integration = new SupabaseIntegration(Supabase.SupabaseClient)),
+      (integration = new SupabaseIntegration(Supabase.SupabaseClient))
     );
 
     await supabase.from("mock-table").select("*").eq("id", 42);
@@ -27,12 +27,12 @@ test("Errors", async (t) => {
   });
 
   await t.test("Capture non-throwable errors if they are enabled", async () => {
-    const err = "Invalid response";
-    const supabase = initSupabase(() => new Response(err, { status: 404 }));
+    const e = "Invalid response";
+    const supabase = initSupabase(() => new Response(e, { status: 404 }));
     const { captureException } = initSentry(
       (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
         errors: true,
-      })),
+      }))
     );
 
     await supabase.from("mock-table").select().eq("id", 42);
@@ -43,19 +43,155 @@ test("Errors", async (t) => {
 
     strictEqual(captureException.mock.calls.length, 5);
 
-    ok(captureException.mock.calls[0].arguments[0] instanceof Error);
-    strictEqual(captureException.mock.calls[0].arguments[0].message, err);
-
-    ok(captureException.mock.calls[1].arguments[0] instanceof Error);
-    strictEqual(captureException.mock.calls[1].arguments[0].message, err);
-
-    ok(captureException.mock.calls[2].arguments[0] instanceof Error);
-    strictEqual(captureException.mock.calls[2].arguments[0].message, err);
-
-    ok(captureException.mock.calls[3].arguments[0] instanceof Error);
-    strictEqual(captureException.mock.calls[3].arguments[0].message, err);
-
-    ok(captureException.mock.calls[4].arguments[0] instanceof Error);
-    strictEqual(captureException.mock.calls[4].arguments[0].message, err);
+    deepStrictEqual(captureException.mock.calls[0].arguments, [
+      new Error(e),
+      {
+        contexts: {
+          supabase: {
+            query: ["select(*)", "eq(id, 42)"],
+          },
+        },
+      },
+    ]);
+    deepStrictEqual(captureException.mock.calls[1].arguments, [
+      new Error(e),
+      {
+        contexts: {
+          supabase: {
+            body: {
+              id: 42,
+            },
+          },
+        },
+      },
+    ]);
+    deepStrictEqual(captureException.mock.calls[2].arguments, [
+      new Error(e),
+      {
+        contexts: {
+          supabase: {
+            body: {
+              id: 42,
+            },
+            query: ["select(*)"],
+          },
+        },
+      },
+    ]);
+    deepStrictEqual(captureException.mock.calls[3].arguments, [
+      new Error(e),
+      {
+        contexts: {
+          supabase: {
+            body: {
+              id: 1337,
+            },
+            query: ["eq(id, 42)"],
+          },
+        },
+      },
+    ]);
+    deepStrictEqual(captureException.mock.calls[4].arguments, [
+      new Error(e),
+      {
+        contexts: {
+          supabase: {
+            query: ["eq(id, 42)"],
+          },
+        },
+      },
+    ]);
   });
+
+  await t.test("Includes error details in captured errors", async () => {
+    const err = "Invalid response";
+    const supabase = initSupabase(
+      () =>
+        new Response(
+          JSON.stringify({
+            message: err,
+            code: "PGRST116",
+            details: "Something went wrong",
+          }),
+          { status: 500 }
+        )
+    );
+    const { captureException } = initSentry(
+      (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
+        errors: true,
+      }))
+    );
+
+    await supabase.from("mock-table").select().eq("id", 42);
+    strictEqual(captureException.mock.calls.length, 1);
+
+    const expectedErr = new Error("Invalid response");
+    expectedErr.code = "PGRST116";
+    expectedErr.details = "Something went wrong";
+    deepStrictEqual(captureException.mock.calls[0].arguments, [
+      expectedErr,
+      {
+        contexts: {
+          supabase: {
+            query: ["select(*)", "eq(id, 42)"],
+          },
+        },
+      },
+    ]);
+  });
+
+  await t.test(
+    "Should be able to redact request body in errors context",
+    async () => {
+      const e = "Invalid response";
+      const supabase = initSupabase(() => new Response(e, { status: 404 }));
+      const { captureException } = initSentry(
+        (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
+          errors: true,
+          sanitizeBody(key, value) {
+            switch (key) {
+              case "password":
+                return "<redacted>";
+              case "token":
+                return "<nope>";
+              case "secret":
+                return "<uwatm8>";
+              default: {
+                return value;
+              }
+            }
+          },
+        }))
+      );
+
+      await supabase
+        .from("mock-table")
+        .insert({ user: "picklerick", password: "whoops" });
+      await supabase
+        .from("mock-table")
+        .upsert({ user: "picklerick", token: "whoops" });
+      await supabase
+        .from("mock-table")
+        .update({ user: "picklerick", secret: "whoops" })
+        .eq("id", 42);
+
+      strictEqual(captureException.mock.calls.length, 3);
+
+      var arg = captureException.mock.calls[0].arguments[1];
+      deepStrictEqual(arg.contexts.supabase.body, {
+        user: "picklerick",
+        password: "<redacted>",
+      });
+      var arg = captureException.mock.calls[1].arguments[1];
+      deepStrictEqual(arg.contexts.supabase.body, {
+        user: "picklerick",
+        token: "<nope>",
+      });
+      var arg = captureException.mock.calls[2].arguments[1];
+      deepStrictEqual(arg.contexts.supabase.body, {
+        user: "picklerick",
+        secret: "<uwatm8>",
+      });
+    }
+  );
 });

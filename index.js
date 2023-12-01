@@ -1,10 +1,6 @@
-// TODO: Add ability to rely on postgrest-js objects directly instead?
-// TODO: Query to sdk method mappings
+const AVAILABLE_OPERATIONS = ["select", "insert", "upsert", "update", "delete"];
 
-const isPlainObject = (wat) =>
-  Object.prototype.toString(wat) === "[object Object]";
-
-const extractOperation = (method, headers = {}) => {
+function extractOperation(method, headers = {}) {
   switch (method) {
     case "GET": {
       return "select";
@@ -23,9 +19,73 @@ const extractOperation = (method, headers = {}) => {
       return "delete";
     }
   }
+}
+
+const FILTER_MAPPINGS = {
+  eq: "eq",
+  neq: "neq",
+  gt: "gt",
+  gte: "gte",
+  lt: "lt",
+  lte: "lte",
+  like: "like",
+  "like(all)": "likeAllOf",
+  "like(any)": "likeAnyOf",
+  ilike: "ilike",
+  "ilike(all)": "ilikeAllOf",
+  "ilike(any)": "ilikeAnyOf",
+  is: "is",
+  in: "in",
+  cs: "contains",
+  cd: "containedBy",
+  sr: "rangeGt",
+  nxl: "rangeGte",
+  sl: "rangeLt",
+  nxr: "rangeLte",
+  adj: "rangeAdjacent",
+  ov: "overlaps",
+  fts: "",
+  plfts: "plain",
+  phfts: "phrase",
+  wfts: "websearch",
+  not: "not",
 };
 
-const AVAILABLE_OPERATIONS = ["select", "insert", "upsert", "update", "delete"];
+function translateFiltersIntoMethods(key, query) {
+  if (query === "" || query === "*") {
+    return `select(*)`;
+  }
+
+  if (key === "select") {
+    return `select(${query})`;
+  }
+
+  if (key === "or" || key.endsWith(".or")) {
+    return `${key}${query}`;
+  }
+
+  const [filter, ...value] = query.split(".");
+
+  let method;
+  // Handle optional `configPart` of the filter
+  if (filter.startsWith("fts")) {
+    method = "textSearch";
+  } else if (filter.startsWith("plfts")) {
+    method = "textSearch[plain]";
+  } else if (filter.startsWith("phfts")) {
+    method = "textSearch[phrase]";
+  } else if (filter.startsWith("wfts")) {
+    method = "textSearch[websearch]";
+  } else {
+    method = FILTER_MAPPINGS[filter] || "filter";
+  }
+
+  return `${method}(${key}, ${value.join(".")})`;
+}
+
+function isPlainObject(wat) {
+  return Object.prototype.toString.call(wat) === "[object Object]";
+}
 
 function validateOption(availableOptions, key, value) {
   if (!availableOptions.includes(key)) {
@@ -46,19 +106,19 @@ function validateOption(availableOptions, key, value) {
 
   if (key === "shouldCreateSpan" && typeof value !== "function") {
     throw new TypeError(
-      "shouldCreateSpan should be a function that returns a boolean",
+      "shouldCreateSpan should be a function that returns a boolean"
     );
   }
 
   if (key === "shouldCreateBreadcrumb" && typeof value !== "function") {
     throw new TypeError(
-      "shouldCreateBreadcrumb should be a function that returns a boolean",
+      "shouldCreateBreadcrumb should be a function that returns a boolean"
     );
   }
 
-  if (key === "sanitizeData" && typeof value !== "function") {
+  if (key === "sanitizeBody" && typeof value !== "function") {
     throw new TypeError(
-      "sanitizeData should be a function that returns a valid data object",
+      "sanitizeBody should be a function that returns a valid data object"
     );
   }
 }
@@ -69,19 +129,26 @@ export class SupabaseIntegration {
   instrumented = new Map();
   options = {
     tracing: true,
-    breadcrumbs: false,
+    breadcrumbs: true,
     errors: false,
     operations: [...AVAILABLE_OPERATIONS],
     shouldCreateSpan: undefined,
     shouldCreateBreadcrumb: undefined,
-    sanitizeData: undefined,
+    sanitizeBody: undefined,
   };
 
   constructor(SupabaseClient, options = {}) {
     if (!SupabaseClient) {
       throw new Error("SupabaseClient class constructor is required");
     }
-    this.SupabaseClient = SupabaseClient;
+
+    // We want to allow passing either `SupabaseClient` constructor
+    // or an instance returned from `createClient()`.
+    if (SupabaseClient.constructor === Function) {
+      this.SupabaseClient = SupabaseClient;
+    } else {
+      this.SupabaseClient = SupabaseClient.constructor;
+    }
 
     if (!isPlainObject(options)) {
       throw new TypeError(`SupabaseIntegration options should be an object`);
@@ -125,7 +192,7 @@ export class SupabaseIntegration {
 
         self.instrumentPostgrestQueryBuilder(
           PostgrestQueryBuilder,
-          getCurrentHub,
+          getCurrentHub
         );
 
         return rv;
@@ -155,12 +222,12 @@ export class SupabaseIntegration {
 
             self.instrumentPostgrestFilterBuilder(
               PostgrestFilterBuilder,
-              getCurrentHub,
+              getCurrentHub
             );
 
             return rv;
           },
-        },
+        }
       );
     }
   }
@@ -190,7 +257,23 @@ export class SupabaseIntegration {
 
           const table = thisArg.url.pathname.split("/").slice(-1)[0];
           const description = `from(${table})`;
-          const query = Object.fromEntries(thisArg.url.searchParams);
+
+          const query = [];
+          for (const [key, value] of thisArg.url.searchParams.entries()) {
+            // It's possible to have multiple entries for the same key, eg. `id=eq.7&id=eq.3`,
+            // so we need to use array instead of object to collect them.
+            query.push(translateFiltersIntoMethods(key, value));
+          }
+
+          const body = {};
+          if (isPlainObject(thisArg.body)) {
+            for (const [key, value] of Object.entries(thisArg.body)) {
+              body[key] =
+                typeof self.options.sanitizeBody === "function"
+                  ? self.options.sanitizeBody(key, value)
+                  : value;
+            }
+          }
 
           const shouldCreateSpan =
             typeof self.options.shouldCreateSpan === "function"
@@ -210,22 +293,19 @@ export class SupabaseIntegration {
               "db.sdk": thisArg.headers["X-Client-Info"],
             };
 
-            if (Object.keys(query).length) {
+            if (query.length) {
               data["db.query"] = query;
             }
 
-            if (thisArg.body) {
-              data["db.body"] = thisArg.body;
+            if (Object.keys(body).length) {
+              data["db.body"] = body;
             }
 
             span = transaction?.startChild({
               description,
               op: `db.${operation}`,
               origin: "auto.db.supabase",
-              data:
-                typeof self.options.sanitizeData === "function"
-                  ? self.options.sanitizeData(data)
-                  : data,
+              data,
             });
           }
 
@@ -237,9 +317,26 @@ export class SupabaseIntegration {
 
                 if (self.options.errors && res.error) {
                   const err = new Error(res.error.message);
-                  err.code = res.error.code;
-                  err.details = res.error.details;
-                  getCurrentHub().captureException(err);
+                  if (res.error.code) {
+                    err.code = res.error.code;
+                  }
+                  if (res.error.details) {
+                    err.details = res.error.details;
+                  }
+
+                  const supabaseContext = {};
+                  if (query.length) {
+                    supabaseContext["query"] = query;
+                  }
+                  if (Object.keys(body).length) {
+                    supabaseContext["body"] = body;
+                  }
+
+                  getCurrentHub().captureException(err, {
+                    contexts: {
+                      supabase: supabaseContext,
+                    },
+                  });
                 }
 
                 const shouldCreateBreadcrumb =
@@ -256,19 +353,16 @@ export class SupabaseIntegration {
 
                   const data = {};
 
-                  if (Object.keys(query).length) {
+                  if (query.length) {
                     data["query"] = query;
                   }
 
-                  if (thisArg.body) {
-                    data["body"] = thisArg.body;
+                  if (Object.keys(body).length) {
+                    data["body"] = body;
                   }
 
                   if (Object.keys(data).length) {
-                    breadcrumb["data"] =
-                      typeof self.options.sanitizeData === "function"
-                        ? self.options.sanitizeData(data)
-                        : data;
+                    breadcrumb["data"] = data;
                   }
 
                   getCurrentHub().addBreadcrumb(breadcrumb);
@@ -280,11 +374,11 @@ export class SupabaseIntegration {
                 span?.setHttpStatus(500);
                 span?.finish();
                 throw err;
-              },
+              }
             )
             .then(...argumentsList);
         },
-      },
+      }
     );
   }
 }

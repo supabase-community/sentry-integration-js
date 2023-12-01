@@ -13,9 +13,48 @@ test("Instrumentation", async (t) => {
     integration = undefined; // Makes sure that each test assigns its own instance
   });
 
+  await t.test(
+    "Should work directly with the SupabaseClient constructor",
+    async () => {
+      const supabase = initSupabase(
+        () => new Response(JSON.stringify({ id: 42 }))
+      );
+
+      const { startChild } = initSentry(
+        (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
+          tracing: true,
+          breadcrumbs: true,
+          errors: true,
+        }))
+      );
+
+      await supabase.from("mock-table").select().eq("id", 42);
+
+      strictEqual(startChild.mock.calls.length, 1);
+    }
+  );
+
+  await t.test("Should work with the SupabaseClient instance", async () => {
+    const supabase = initSupabase(
+      () => new Response(JSON.stringify({ id: 42 }))
+    );
+
+    const { startChild } = initSentry(
+      (integration = new SupabaseIntegration(supabase, {
+        tracing: true,
+        breadcrumbs: true,
+        errors: true,
+      }))
+    );
+
+    await supabase.from("mock-table").select().eq("id", 42);
+
+    strictEqual(startChild.mock.calls.length, 1);
+  });
+
   await t.test("Should preserve returned data", async () => {
     const supabase = initSupabase(
-      () => new Response(JSON.stringify({ id: 42 })),
+      () => new Response(JSON.stringify({ id: 42 }))
     );
 
     initSentry(
@@ -23,7 +62,7 @@ test("Instrumentation", async (t) => {
         tracing: true,
         breadcrumbs: true,
         errors: true,
-      })),
+      }))
     );
 
     var { data, error } = await supabase
@@ -61,7 +100,7 @@ test("Instrumentation", async (t) => {
 
   await t.test("Should preserve returned errors", async () => {
     const supabase = initSupabase(
-      () => new Response("Invalid request", { status: 500 }),
+      () => new Response("Invalid request", { status: 500 })
     );
 
     initSentry(
@@ -69,7 +108,7 @@ test("Instrumentation", async (t) => {
         tracing: true,
         breadcrumbs: true,
         errors: true,
-      })),
+      }))
     );
 
     var { data, error } = await supabase
@@ -109,7 +148,7 @@ test("Instrumentation", async (t) => {
     "Should be able to not instrumentation specific operations",
     async () => {
       const supabase = initSupabase(
-        () => new Response("Invalid request", { status: 500 }),
+        () => new Response("Invalid request", { status: 500 })
       );
       const {
         setHttpStatus,
@@ -123,7 +162,7 @@ test("Instrumentation", async (t) => {
           breadcrumbs: true,
           errors: true,
           operations: ["select", "delete"],
-        })),
+        }))
       );
 
       await supabase.from("mock-table").select().eq("id", 42);
@@ -137,6 +176,6 @@ test("Instrumentation", async (t) => {
       strictEqual(finish.mock.calls.length, 2);
       strictEqual(addBreadcrumb.mock.calls.length, 2);
       strictEqual(captureException.mock.calls.length, 2);
-    },
+    }
   );
 });
