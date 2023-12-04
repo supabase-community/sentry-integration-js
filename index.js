@@ -270,14 +270,22 @@ export class SupabaseIntegration {
             for (const [key, value] of Object.entries(thisArg.body)) {
               body[key] =
                 typeof self.options.sanitizeBody === "function"
-                  ? self.options.sanitizeBody(key, value)
+                  ? self.options.sanitizeBody(table, key, value)
                   : value;
             }
           }
 
+          const shouldCreatePayload = {
+            method: thisArg.method,
+            url: thisArg.url,
+            headers: thisArg.headers,
+            schema: thisArg.schema,
+            body: thisArg.body,
+          };
+
           const shouldCreateSpan =
             typeof self.options.shouldCreateSpan === "function"
-              ? self.options.shouldCreateSpan(thisArg)
+              ? self.options.shouldCreateSpan(shouldCreatePayload)
               : true;
 
           let span;
@@ -341,7 +349,7 @@ export class SupabaseIntegration {
 
                 const shouldCreateBreadcrumb =
                   typeof self.options.shouldCreateBreadcrumb === "function"
-                    ? self.options.shouldCreateBreadcrumb(thisArg)
+                    ? self.options.shouldCreateBreadcrumb(shouldCreatePayload)
                     : true;
 
                 if (self.options.breadcrumbs && shouldCreateBreadcrumb) {

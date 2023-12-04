@@ -1,5 +1,5 @@
-import { type SupabaseClient } from "@supabase/supabase-js";
-import { type PostgrestBuilder } from "@supabase/postgrest-js";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { EventProcessor, Hub, Integration } from "@sentry/types";
 
 /**
 @returns Sentry JavaScript SDK Integration that can be used to instrument Supabase JavaScript SDK instrumentation.
@@ -21,17 +21,30 @@ Sentry.init({
 });
 ```
 */
-export class SupabaseIntegration {
+export class SupabaseIntegration implements Integration {
+  name: string;
   constructor(
-    clientConstructor: SupabaseClient,
-    options: {
-      tracing?: boolean;
-      errors?: boolean;
-      breadcrumbs?: boolean;
-      operations?: ["select" | "insert" | "upsert" | "update" | "delete"][];
-      shouldCreateSpan: (builder: PostgrestBuilder<unknown>) => boolean;
-      shouldCreateBreadcrumb: (builder: PostgrestBuilder<unknown>) => boolean;
-      sanitizeBody(key: string, value: unknown): any;
-    }
+    clientConstructor: typeof SupabaseClient,
+    options?: Partial<{
+      tracing: boolean;
+      errors: boolean;
+      breadcrumbs: boolean;
+      operations: ["select" | "insert" | "upsert" | "update" | "delete"][];
+      shouldCreateSpan: (payload: Payload) => boolean;
+      shouldCreateBreadcrumb: (payload: Payload) => boolean;
+      sanitizeBody(table: string, key: string, value: unknown): any;
+    }>
   );
+  setupOnce(
+    addGlobalEventProcessor: (callback: EventProcessor) => void,
+    getCurrentHub: () => Hub
+  ): void;
 }
+
+export type Payload = {
+  method: "GET" | "HEAD" | "POST" | "PATCH" | "DELETE";
+  url: URL;
+  headers: Record<string, string>;
+  schema?: string;
+  body?: unknown;
+};

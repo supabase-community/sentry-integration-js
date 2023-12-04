@@ -202,7 +202,7 @@ test("Tracing", async (t) => {
       );
       const { setHttpStatus, finish, startChild } = initSentry(
         (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
-          sanitizeBody(key, value) {
+          sanitizeBody(table, key, value) {
             switch (key) {
               case "password":
                 return "<redacted>";

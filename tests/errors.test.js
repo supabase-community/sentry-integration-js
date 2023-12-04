@@ -148,7 +148,7 @@ test("Errors", async (t) => {
       const { captureException } = initSentry(
         (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
           errors: true,
-          sanitizeBody(key, value) {
+          sanitizeBody(table, key, value) {
             switch (key) {
               case "password":
                 return "<redacted>";

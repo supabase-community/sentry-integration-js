@@ -111,7 +111,7 @@ test("Breadcrumbs", async (t) => {
         (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
           breadcrumbs: true,
           errors: true,
-          sanitizeBody(key, value) {
+          sanitizeBody(table, key, value) {
             switch (key) {
               case "password":
                 return "<redacted>";
