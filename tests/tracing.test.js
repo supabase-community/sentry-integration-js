@@ -190,7 +190,7 @@ test("Tracing", async (t) => {
     strictEqual(setHttpStatus.mock.calls.length, 1);
     strictEqual(finish.mock.calls.length, 1);
 
-    var arg = startChild.mock.calls[0].arguments[0];
+    const arg = startChild.mock.calls[0].arguments[0];
     deepStrictEqual(arg.data["db.query"], ["select(*)", "eq(id, 1337)"]);
   });
 
@@ -233,21 +233,29 @@ test("Tracing", async (t) => {
       strictEqual(setHttpStatus.mock.calls.length, 3);
       strictEqual(finish.mock.calls.length, 3);
 
-      var arg = startChild.mock.calls[0].arguments[0];
-      deepStrictEqual(arg.data["db.body"], {
-        user: "picklerick",
-        password: "<redacted>",
-      });
-      var arg = startChild.mock.calls[1].arguments[0];
-      deepStrictEqual(arg.data["db.body"], {
-        user: "picklerick",
-        token: "<nope>",
-      });
-      var arg = startChild.mock.calls[2].arguments[0];
-      deepStrictEqual(arg.data["db.body"], {
-        user: "picklerick",
-        secret: "<uwatm8>",
-      });
+      {
+        const arg = startChild.mock.calls[0].arguments[0];
+        deepStrictEqual(arg.data["db.body"], {
+          user: "picklerick",
+          password: "<redacted>",
+        });
+      }
+
+      {
+        const arg = startChild.mock.calls[1].arguments[0];
+        deepStrictEqual(arg.data["db.body"], {
+          user: "picklerick",
+          token: "<nope>",
+        });
+      }
+
+      {
+        const arg = startChild.mock.calls[2].arguments[0];
+        deepStrictEqual(arg.data["db.body"], {
+          user: "picklerick",
+          secret: "<uwatm8>",
+        });
+      }
     }
   );
 });

@@ -1,5 +1,5 @@
 import { test, afterEach } from "node:test";
-import { deepStrictEqual, ok, strictEqual } from "node:assert";
+import { deepStrictEqual, strictEqual } from "node:assert";
 import { initSentry, initSupabase } from "./mocks.js";
 
 import { SupabaseIntegration } from "../index.js";
@@ -177,21 +177,29 @@ test("Errors", async (t) => {
 
       strictEqual(captureException.mock.calls.length, 3);
 
-      var arg = captureException.mock.calls[0].arguments[1];
-      deepStrictEqual(arg.contexts.supabase.body, {
-        user: "picklerick",
-        password: "<redacted>",
-      });
-      var arg = captureException.mock.calls[1].arguments[1];
-      deepStrictEqual(arg.contexts.supabase.body, {
-        user: "picklerick",
-        token: "<nope>",
-      });
-      var arg = captureException.mock.calls[2].arguments[1];
-      deepStrictEqual(arg.contexts.supabase.body, {
-        user: "picklerick",
-        secret: "<uwatm8>",
-      });
+      {
+        const arg = captureException.mock.calls[0].arguments[1];
+        deepStrictEqual(arg.contexts.supabase.body, {
+          user: "picklerick",
+          password: "<redacted>",
+        });
+      }
+
+      {
+        const arg = captureException.mock.calls[1].arguments[1];
+        deepStrictEqual(arg.contexts.supabase.body, {
+          user: "picklerick",
+          token: "<nope>",
+        });
+      }
+
+      {
+        const arg = captureException.mock.calls[2].arguments[1];
+        deepStrictEqual(arg.contexts.supabase.body, {
+          user: "picklerick",
+          secret: "<uwatm8>",
+        });
+      }
     }
   );
 });

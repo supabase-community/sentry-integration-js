@@ -65,37 +65,49 @@ test("Instrumentation", async (t) => {
       }))
     );
 
-    var { data, error } = await supabase
-      .from("mock-table")
-      .select()
-      .eq("id", 42);
-    deepStrictEqual(data, { id: 42 });
-    deepStrictEqual(error, null);
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .select()
+        .eq("id", 42);
+      deepStrictEqual(data, { id: 42 });
+      deepStrictEqual(error, null);
+    }
 
-    var { data, error } = await supabase.from("mock-table").insert({ id: 42 });
-    deepStrictEqual(data, { id: 42 });
-    deepStrictEqual(error, null);
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .insert({ id: 42 });
+      deepStrictEqual(data, { id: 42 });
+      deepStrictEqual(error, null);
+    }
 
-    var { data, error } = await supabase
-      .from("mock-table")
-      .upsert({ id: 42 })
-      .select();
-    deepStrictEqual(data, { id: 42 });
-    deepStrictEqual(error, null);
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .upsert({ id: 42 })
+        .select();
+      deepStrictEqual(data, { id: 42 });
+      deepStrictEqual(error, null);
+    }
 
-    var { data, error } = await supabase
-      .from("mock-table")
-      .update({ id: 1337 })
-      .eq("id", 42);
-    deepStrictEqual(data, { id: 42 });
-    deepStrictEqual(error, null);
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .update({ id: 1337 })
+        .eq("id", 42);
+      deepStrictEqual(data, { id: 42 });
+      deepStrictEqual(error, null);
+    }
 
-    var { data, error } = await supabase
-      .from("mock-table")
-      .delete()
-      .eq("id", 42);
-    deepStrictEqual(data, { id: 42 });
-    deepStrictEqual(error, null);
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .delete()
+        .eq("id", 42);
+      deepStrictEqual(data, { id: 42 });
+      deepStrictEqual(error, null);
+    }
   });
 
   await t.test("Should preserve returned errors", async () => {
@@ -111,37 +123,49 @@ test("Instrumentation", async (t) => {
       }))
     );
 
-    var { data, error } = await supabase
-      .from("mock-table")
-      .select()
-      .eq("id", 42);
-    deepStrictEqual(data, null);
-    deepStrictEqual(error, { message: "Invalid request" });
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .select()
+        .eq("id", 42);
+      deepStrictEqual(data, null);
+      deepStrictEqual(error, { message: "Invalid request" });
+    }
 
-    var { data, error } = await supabase.from("mock-table").insert({ id: 42 });
-    deepStrictEqual(data, null);
-    deepStrictEqual(error, { message: "Invalid request" });
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .insert({ id: 42 });
+      deepStrictEqual(data, null);
+      deepStrictEqual(error, { message: "Invalid request" });
+    }
 
-    var { data, error } = await supabase
-      .from("mock-table")
-      .upsert({ id: 42 })
-      .select();
-    deepStrictEqual(data, null);
-    deepStrictEqual(error, { message: "Invalid request" });
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .upsert({ id: 42 })
+        .select();
+      deepStrictEqual(data, null);
+      deepStrictEqual(error, { message: "Invalid request" });
+    }
 
-    var { data, error } = await supabase
-      .from("mock-table")
-      .update({ id: 1337 })
-      .eq("id", 42);
-    deepStrictEqual(data, null);
-    deepStrictEqual(error, { message: "Invalid request" });
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .update({ id: 1337 })
+        .eq("id", 42);
+      deepStrictEqual(data, null);
+      deepStrictEqual(error, { message: "Invalid request" });
+    }
 
-    var { data, error } = await supabase
-      .from("mock-table")
-      .delete()
-      .eq("id", 42);
-    deepStrictEqual(data, null);
-    deepStrictEqual(error, { message: "Invalid request" });
+    {
+      const { data, error } = await supabase
+        .from("mock-table")
+        .delete()
+        .eq("id", 42);
+      deepStrictEqual(data, null);
+      deepStrictEqual(error, { message: "Invalid request" });
+    }
   });
 
   await t.test(

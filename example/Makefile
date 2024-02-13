@@ -1,0 +1,2 @@
+start:
+	npx serve . -S

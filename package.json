@@ -1,9 +1,13 @@
 {
   "name": "@supabase/sentry-js-integration",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Supabase integration for Sentry JavaScript SDK",
   "license": "MIT",
-  "repository": "@supabase/sentry-js-integration",
+  "homepage": "https://github.com/supabase-community/sentry-integration-js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/supabase-community/sentry-integration-js.git"
+  },
   "author": {
     "name": "Kamil Ogórek",
     "email": "kamil@supabase.io",
@@ -14,22 +18,31 @@
     "types": "./index.d.ts",
     "default": "./index.js"
   },
-  "sideEffects": false,
-  "engines": {
-    "node": ">=18"
-  },
-  "scripts": {
-    "test": "node --test tests/*.test.js",
-    "test:watch": "node --watch --test tests/*.test.js"
-  },
   "files": [
     "index.js",
     "index.d.ts"
   ],
+  "scripts": {
+    "lint": "npx eslint .",
+    "test": "node --test tests/*.test.js",
+    "test:watch": "node --watch --test tests/*.test.js"
+  },
   "peerDependencies": {
     "@supabase/supabase-js": "2.x"
   },
   "devDependencies": {
-    "@supabase/supabase-js": "2.39.0"
+    "@supabase/supabase-js": "2.39.0",
+    "eslint": "^8.56.0"
+  },
+  "eslintConfig": {
+    "extends": "eslint:recommended",
+    "env": {
+      "shared-node-browser": true,
+      "es2020": true
+    },
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module"
+    }
   }
 }

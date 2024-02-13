@@ -29,8 +29,9 @@ npm install @supabase/sentry-js-integration
 ## Usage
 
 ```js
-import { SupabaseIntegration } from "@supabase/sentry-js-integration";
+import * as Sentry from "@sentry/browser";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseIntegration } from "@supabase/sentry-js-integration";
 
 Sentry.init({
   dsn: "https://dsn@sentry.io/1337",

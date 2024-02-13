@@ -140,21 +140,29 @@ test("Breadcrumbs", async (t) => {
 
       strictEqual(addBreadcrumb.mock.calls.length, 3);
 
-      var arg = addBreadcrumb.mock.calls[0].arguments[0];
-      deepStrictEqual(arg.data.body, {
-        user: "picklerick",
-        password: "<redacted>",
-      });
-      var arg = addBreadcrumb.mock.calls[1].arguments[0];
-      deepStrictEqual(arg.data.body, {
-        user: "picklerick",
-        token: "<nope>",
-      });
-      var arg = addBreadcrumb.mock.calls[2].arguments[0];
-      deepStrictEqual(arg.data.body, {
-        user: "picklerick",
-        secret: "<uwatm8>",
-      });
+      {
+        const arg = addBreadcrumb.mock.calls[0].arguments[0];
+        deepStrictEqual(arg.data.body, {
+          user: "picklerick",
+          password: "<redacted>",
+        });
+      }
+
+      {
+        const arg = addBreadcrumb.mock.calls[1].arguments[0];
+        deepStrictEqual(arg.data.body, {
+          user: "picklerick",
+          token: "<nope>",
+        });
+      }
+
+      {
+        const arg = addBreadcrumb.mock.calls[2].arguments[0];
+        deepStrictEqual(arg.data.body, {
+          user: "picklerick",
+          secret: "<uwatm8>",
+        });
+      }
     }
   );
 });
