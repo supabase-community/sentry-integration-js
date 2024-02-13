@@ -12,7 +12,7 @@ const COMMON_SPAN_DATA = {
   "db.schema": "public",
   "db.table": "mock-table",
   "db.url": "http://mock-url.com",
-  "db.sdk": "supabase-js-node/2.39.0",
+  "db.sdk": "supabase-js-node/2.39.4",
 };
 
 test("Tracing", async (t) => {
