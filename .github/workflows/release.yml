@@ -1,0 +1,19 @@
+name: Release
+
+on:
+  # TODO(kamil): Enable once we're at 1.0.0 as semantic-release do not support pre v1 releasing
+  # workflow_dispatch:
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npx semantic-release@23
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
