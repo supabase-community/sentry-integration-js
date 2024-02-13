@@ -13,6 +13,9 @@
     "email": "kamil@supabase.io",
     "url": "https://supabase.com"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "exports": {
     "types": "./index.d.ts",
