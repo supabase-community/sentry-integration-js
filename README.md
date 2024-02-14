@@ -20,7 +20,13 @@ Sentry JavaScript SDK Integration that can be used to instrument Supabase JavaSc
 
 See [Showcase](#showcase) section for detailed screenshots of what is captured.
 
-## Install
+---
+
+> NOTE: Currently the integration works for all v2 SDK versions up to version v2.39.1. We're working on making it work with latest as well.
+
+---
+
+## Install 
 
 ```sh
 npm install @supabase/sentry-js-integration
