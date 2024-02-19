@@ -169,7 +169,7 @@ test("Instrumentation", async (t) => {
   });
 
   await t.test(
-    "Should be able to not instrumentation specific operations",
+    "Should be able to not instrument specific operations",
     async () => {
       const supabase = initSupabase(
         () => new Response("Invalid request", { status: 500 })

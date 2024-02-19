@@ -5,28 +5,27 @@
       {
         "imports": {
           "@sentry/browser": "https://esm.sh/@sentry/browser@7.100.1",
-          "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.4",
+          "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7",
           "@supabase/sentry-js-integration": "./integration.js"
         }
       }
     </script>
     <script type="module">
       import * as Sentry from "@sentry/browser";
-      import { createClient, SupabaseClient } from "@supabase/supabase-js";
+      import { createClient } from "@supabase/supabase-js";
       import { SupabaseIntegration } from "@supabase/sentry-js-integration";
 
-      const supabase = createClient(
+      const supabaseClient = createClient(
         "https://ktrpkblcwnulhtgpcrbp.supabase.co",
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0cnBrYmxjd251bGh0Z3BjcmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY3ODk0OTAsImV4cCI6MjAyMjM2NTQ5MH0.CXEvu4tYFRXtwYvMFllhAwyu1NsyUmaqhgxfHFhzOHA"
       );
 
-      Sentry.addTracingExtensions();
       Sentry.init({
         dsn: "https://dsn@sentry.io/1337",
         tracesSampleRate: 1.0,
         integrations: [
           Sentry.browserTracingIntegration(),
-          new SupabaseIntegration(SupabaseClient, {
+          new SupabaseIntegration(supabaseClient, {
             tracing: true,
             breadcrumbs: true,
             errors: true,
@@ -44,7 +43,7 @@
 
       // Capture some trace and breadcrumbs via `tracing: true` and `breadcrumbs: true`
       {
-        const { data, error } = await supabase.from("jokes").select("*");
+        const { data, error } = await supabaseClient.from("jokes").select("*");
         console.log("jokes response:");
         console.log({ data });
         console.log({ error });
@@ -52,7 +51,7 @@
 
       // Capture broken calls as exceptions
       {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
           .from("unknown-table")
           .select("*");
         console.log("unknown-table response:");

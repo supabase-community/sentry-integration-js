@@ -20,13 +20,7 @@ Sentry JavaScript SDK Integration that can be used to instrument Supabase JavaSc
 
 See [Showcase](#showcase) section for detailed screenshots of what is captured.
 
----
-
-> NOTE: Currently the integration works for all v2 SDK versions up to version v2.39.1. We're working on making it work with latest as well.
-
----
-
-## Install 
+## Install
 
 ```sh
 npm install @supabase/sentry-js-integration
@@ -40,9 +34,30 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { SupabaseIntegration } from "@supabase/sentry-js-integration";
 
 Sentry.init({
-  dsn: "https://dsn@sentry.io/1337",
+  dsn: SENTRY_DSN,
   integrations: [
     new SupabaseIntegration(SupabaseClient, {
+      tracing: true,
+      breadcrumbs: true,
+      errors: true,
+    }),
+  ],
+});
+```
+
+or
+
+```js
+import * as Sentry from "@sentry/browser";
+import { createClient } from "@supabase/supabase-js";
+import { SupabaseIntegration } from "@supabase/sentry-js-integration";
+
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+Sentry.init({
+  dsn: SENTRY_DSN,
+  integrations: [
+    new SupabaseIntegration(supabaseClient, {
       tracing: true,
       breadcrumbs: true,
       errors: true,

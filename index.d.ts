@@ -8,16 +8,19 @@ https://docs.sentry.io/platforms/javascript/configuration/integrations/
 
 @example
 ```
-import { SupabaseIntegration } from '@supabase/sentry-integration';
-import { SupabaseClient } from '@supabase/supabase-js';
+import * as Sentry from "@sentry/browser";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseIntegration } from "@supabase/sentry-js-integration";
 
 Sentry.init({
-  dsn: "https://dsn@sentry.io/1337",
-  integrations: [new SupabaseIntegration(SupabaseClient, {
-    tracing: true,
-    breadcrumbs: true,
-    errors: true
-  })]
+  dsn: SENTRY_DSN,
+  integrations: [
+    new SupabaseIntegration(SupabaseClient, {
+      tracing: true,
+      breadcrumbs: true,
+      errors: true,
+    }),
+  ],
 });
 ```
 */
