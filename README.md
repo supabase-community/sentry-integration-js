@@ -135,6 +135,8 @@ Sentry.init({
 
 See this example for a setup with Next.js to cover browser, server, and edge environments. First, run through the [Sentry Next.js wizard](https://docs.sentry.io/platforms/javascript/guides/nextjs/#install) to generate the base Next.js configuration. Then add the Supabase Sentry Integration to all your `Sentry.init` calls with the appropriate filters.
 
+`sentry.client.config.ts`
+
 ```js sentry.client.config.ts
 import * as Sentry from "@sentry/nextjs";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -175,6 +177,8 @@ Sentry.init({
 });
 ```
 
+`sentry.server.config.ts`
+
 ```js sentry.server.config.ts
 import * as Sentry from "@sentry/nextjs";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -207,6 +211,8 @@ Sentry.init({
   debug: true,
 });
 ```
+
+`sentry.edge.config.ts`
 
 ```js sentry.edge.config.ts
 import * as Sentry from "@sentry/nextjs";
