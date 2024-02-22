@@ -242,6 +242,8 @@ Sentry.init({
 });
 ```
 
+Afterward build your application (`npm run build`) and start it locally (`npm run start`). You will now see the transactions being logged in the terminal when making supabase-js requests.
+
 </details>
 
 ## Showcase
