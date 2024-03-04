@@ -68,13 +68,17 @@ Sentry.init({
 
 ## Options
 
-- `tracing: boolean` - Enable tracing instrumentation for database calls _(defaults to **true**)_
-- `breadcrumbs: boolean` - Enable capturing breadcrumbs for database calls _(defaults to **true**)_
-- `errors: boolean` - Enable capturing non-throwable database errors as Sentry exceptions _(defaults to **false**)_
-- `operations: "select" | insert" | "upsert" | "update" | "delete"` - Configures which methods should be instrumented for the features above _(defaults to **all operations**)_
-- `shouldCreateSpan: (payload) => boolean` - Decide whether a span should be created based on the query payload used to capture this data
-- `shouldCreateBreadcrumb: (payload) => boolean` - Decide whether a breadcrumb should be created based on the query payload used to capture this data
-- `sanitizeBody: (table, key, value) => value` - Allows for modifying captured body values that are passed to `insert/upsert/update` operations, before assigned to a `span`, `breadcrumb`, or `error
+| Option | Description | Default |
+| ------------- | ------------- | ------------- |
+| `tracing` | Enable tracing instrumentation for database calls | **true** |
+| `breadcrumbs` | Enable capturing breadcrumbs for database calls | **true** |
+| `errors` | Enable capturing non-throwable database errors as Sentry exceptions | **false** |
+| `operations` | Configures which methods should be instrumented for the features above | - |
+| `sanitizeBody` | Allows for modifying captured body values that are passed to insert, upsert, and update operations, before assigned to a span, breadcrumb, or error | - |
+| `shouldCreateSpan` | Decide whether a span should be created based on the query payload used to capture this data | - |
+| `shouldCreateBreadcrumb` | Decide whether a breadcrumb should be created based on the query payload used to capture this data | - |
+
+See https://github.com/supabase-community/sentry-integration-js/blob/master/index.d.ts for detailed options types.
 
 ### Removing duplicated http/fetch spans
 
