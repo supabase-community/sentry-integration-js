@@ -36,7 +36,7 @@ import { supabaseIntegration } from "@supabase/sentry-js-integration";
 Sentry.init({
   dsn: SENTRY_DSN,
   integrations: [
-    new supabaseIntegration(SupabaseClient, Sentry, {
+    supabaseIntegration(SupabaseClient, Sentry, {
       tracing: true,
       breadcrumbs: true,
       errors: true,
@@ -57,7 +57,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 Sentry.init({
   dsn: SENTRY_DSN,
   integrations: [
-    new supabaseIntegration(supabaseClient, Sentry, {
+    supabaseIntegration(supabaseClient, Sentry, {
       tracing: true,
       breadcrumbs: true,
       errors: true,
