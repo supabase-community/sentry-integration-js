@@ -31,7 +31,7 @@ export function initSentry(integration) {
     }),
   });
 
-  // This is basically how Sentry's integrations setup works.
+  // This is basically how Sentry's integrations setup works in v7.
   integration.setupOnce(() => {}, getCurrentHub);
 
   return { setHttpStatus, finish, startChild, captureException, addBreadcrumb };

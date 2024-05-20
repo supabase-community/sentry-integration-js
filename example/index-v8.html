@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="importmap">
+      {
+        "imports": {
+          "@sentry/browser": "https://esm.sh/@sentry/browser@8.2.1",
+          "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.43.2",
+          "@supabase/sentry-js-integration": "./integration.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as Sentry from "@sentry/browser";
+      import { createClient } from "@supabase/supabase-js";
+      import { supabaseIntegration } from "@supabase/sentry-js-integration";
+
+      const supabaseClient = createClient(
+        "https://ktrpkblcwnulhtgpcrbp.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0cnBrYmxjd251bGh0Z3BjcmJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY3ODk0OTAsImV4cCI6MjAyMjM2NTQ5MH0.CXEvu4tYFRXtwYvMFllhAwyu1NsyUmaqhgxfHFhzOHA"
+      );
+
+      Sentry.init({
+        dsn: "https://dsn@sentry.io/1337",
+        tracesSampleRate: 1.0,
+        integrations: [
+          Sentry.browserTracingIntegration(),
+          supabaseIntegration(supabaseClient, Sentry, {
+            tracing: true,
+            breadcrumbs: true,
+            errors: true,
+          }),
+        ],
+        beforeSend(event) {
+          console.log("Captured exception:", event);
+          return null; // Do not send captured exception
+        },
+        beforeSendTransaction(event) {
+          console.log("Captured transaction:", event);
+          return null; // Do not send transaction
+        },
+      });
+
+      // Capture some trace and breadcrumbs via `tracing: true` and `breadcrumbs: true`
+      {
+        const { data, error } = await supabaseClient.from("jokes").select("*");
+        console.log("jokes response:");
+        console.log({ data });
+        console.log({ error });
+      }
+
+      // Capture broken calls as exceptions
+      {
+        const { data, error } = await supabaseClient
+          .from("unknown-table")
+          .select("*");
+        console.log("unknown-table response:");
+        console.log({ data });
+        console.log({ error });
+      }
+
+      Sentry.captureException(new Error("show me the money"));
+    </script>
+  </head>
+  <body>
+    <h1>Hello there! Open DevTools to see what's going on.</h1>
+  </body>
+</html>

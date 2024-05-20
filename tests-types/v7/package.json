@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "test": "npx tsc --noemit index.ts"
+  },
+  "dependencies": {
+    "@sentry/browser": "^7.116.0",
+    "@sentry/types": "^7.116.0",
+    "@supabase/sentry-js-integration": "file:../../.",
+    "@supabase/supabase-js": "^2.43.2",
+    "typescript": "^5.4.5"
+  }
+}

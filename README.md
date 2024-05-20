@@ -26,7 +26,47 @@ See [Showcase](#showcase) section for detailed screenshots of what is captured.
 npm install @supabase/sentry-js-integration
 ```
 
-## Usage
+## Usage (Sentry SDK v8)
+
+```js
+import * as Sentry from "@sentry/browser";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { supabaseIntegration } from "@supabase/sentry-js-integration";
+
+Sentry.init({
+  dsn: SENTRY_DSN,
+  integrations: [
+    new supabaseIntegration(SupabaseClient, Sentry, {
+      tracing: true,
+      breadcrumbs: true,
+      errors: true,
+    }),
+  ],
+});
+```
+
+or
+
+```js
+import * as Sentry from "@sentry/browser";
+import { createClient } from "@supabase/supabase-js";
+import { supabaseIntegration } from "@supabase/sentry-js-integration";
+
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+Sentry.init({
+  dsn: SENTRY_DSN,
+  integrations: [
+    new supabaseIntegration(supabaseClient, Sentry, {
+      tracing: true,
+      breadcrumbs: true,
+      errors: true,
+    }),
+  ],
+});
+```
+
+## Usage (Sentry SDK v7)
 
 ```js
 import * as Sentry from "@sentry/browser";
@@ -68,15 +108,15 @@ Sentry.init({
 
 ## Options
 
-| Option | Description | Default |
-| ------------- | ------------- | ------------- |
-| `tracing` | Enable tracing instrumentation for database calls | **true** |
-| `breadcrumbs` | Enable capturing breadcrumbs for database calls | **true** |
-| `errors` | Enable capturing non-throwable database errors as Sentry exceptions | **false** |
-| `operations` | Configures which methods should be instrumented for the features above | - |
-| `sanitizeBody` | Allows for modifying captured body values that are passed to insert, upsert, and update operations, before assigned to a span, breadcrumb, or error | - |
-| `shouldCreateSpan` | Decide whether a span should be created based on the query payload used to capture this data | - |
-| `shouldCreateBreadcrumb` | Decide whether a breadcrumb should be created based on the query payload used to capture this data | - |
+| Option                   | Description                                                                                                                                         | Default   |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `tracing`                | Enable tracing instrumentation for database calls                                                                                                   | **true**  |
+| `breadcrumbs`            | Enable capturing breadcrumbs for database calls                                                                                                     | **true**  |
+| `errors`                 | Enable capturing non-throwable database errors as Sentry exceptions                                                                                 | **false** |
+| `operations`             | Configures which methods should be instrumented for the features above                                                                              | -         |
+| `sanitizeBody`           | Allows for modifying captured body values that are passed to insert, upsert, and update operations, before assigned to a span, breadcrumb, or error | -         |
+| `shouldCreateSpan`       | Decide whether a span should be created based on the query payload used to capture this data                                                        | -         |
+| `shouldCreateBreadcrumb` | Decide whether a breadcrumb should be created based on the query payload used to capture this data                                                  | -         |
 
 See https://github.com/supabase-community/sentry-integration-js/blob/master/index.d.ts for detailed options types.
 
@@ -249,6 +289,42 @@ Sentry.init({
 Afterward build your application (`npm run build`) and start it locally (`npm run start`). You will now see the transactions being logged in the terminal when making supabase-js requests.
 
 </details>
+
+## Developing
+
+Run library unit tests:
+
+```sh
+npm install
+npm run lint
+npm run test
+```
+
+Run types tests for SDK v8:
+
+```sh
+cd tests-types/v8
+npm install
+npm run test
+```
+
+Run types tests for SDK v7:
+
+```sh
+cd tests-types/v7
+npm install
+npm run test
+```
+
+## Publishing
+
+```sh
+npm version <patch|minor|major>
+git push
+npm publish
+```
+
+Then bump release version + changelog in [https://github.com/supabase-community/sentry-integration-js/releases](https://github.com/supabase-community/sentry-integration-js/releases).
 
 ## Showcase
 

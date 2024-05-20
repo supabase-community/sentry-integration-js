@@ -2,7 +2,7 @@ import { test, afterEach } from "node:test";
 import { deepStrictEqual, strictEqual } from "node:assert";
 import { initSentry, initSupabase } from "./mocks.js";
 
-import { SupabaseIntegration } from "../index.js";
+import { SupabaseIntegration } from "../../v7.js";
 import Supabase from "@supabase/supabase-js";
 
 const COMMON_SPAN_PAYLOAD = {

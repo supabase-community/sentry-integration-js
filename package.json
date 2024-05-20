@@ -27,14 +27,14 @@
   ],
   "scripts": {
     "lint": "npx eslint .",
-    "test": "node --test tests/*.test.js",
-    "test:watch": "node --watch --test tests/*.test.js"
+    "test": "node --test tests/**/*.test.js",
+    "test:watch": "node --watch --test tests/**/*.test.js"
   },
   "peerDependencies": {
     "@supabase/supabase-js": "2.x"
   },
   "devDependencies": {
-    "@supabase/supabase-js": "2.39.7",
+    "@supabase/supabase-js": "2.43.2",
     "eslint": "^8.56.0"
   },
   "eslintConfig": {

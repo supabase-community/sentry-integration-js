@@ -1,8 +1,8 @@
 import { test, afterEach } from "node:test";
 import { deepStrictEqual, strictEqual } from "node:assert";
-import { initSentry, initSupabase } from "./mocks.js";
+import { getSentryMock, initSupabase } from "./mocks.js";
 
-import { SupabaseIntegration } from "../index.js";
+import { supabaseIntegration } from "../../v8.js";
 import Supabase from "@supabase/supabase-js";
 
 test("Errors", async (t) => {
@@ -17,23 +17,24 @@ test("Errors", async (t) => {
     const supabase = initSupabase(
       () => new Response(JSON.stringify({ id: 42 }))
     );
-    const { captureException } = initSentry(
-      (integration = new SupabaseIntegration(Supabase.SupabaseClient))
-    );
+    const Sentry = getSentryMock();
+    integration = supabaseIntegration(Supabase.SupabaseClient, Sentry);
+    // This is basically how Sentry's integrations setup works in v8.
+    integration.setupOnce(() => {});
 
     await supabase.from("mock-table").select("*").eq("id", 42);
 
-    strictEqual(captureException.mock.calls.length, 0);
+    strictEqual(Sentry.captureException.mock.calls.length, 0);
   });
 
   await t.test("Capture non-throwable errors if they are enabled", async () => {
     const e = "Invalid response";
     const supabase = initSupabase(() => new Response(e, { status: 404 }));
-    const { captureException } = initSentry(
-      (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
-        errors: true,
-      }))
-    );
+    const Sentry = getSentryMock();
+    integration = supabaseIntegration(Supabase.SupabaseClient, Sentry, {
+      errors: true,
+    });
+    integration.setupOnce(() => {});
 
     await supabase.from("mock-table").select().eq("id", 42);
     await supabase.from("mock-table").insert({ id: 42 });
@@ -41,9 +42,9 @@ test("Errors", async (t) => {
     await supabase.from("mock-table").update({ id: 1337 }).eq("id", 42);
     await supabase.from("mock-table").delete().eq("id", 42);
 
-    strictEqual(captureException.mock.calls.length, 5);
+    strictEqual(Sentry.captureException.mock.calls.length, 5);
 
-    deepStrictEqual(captureException.mock.calls[0].arguments, [
+    deepStrictEqual(Sentry.captureException.mock.calls[0].arguments, [
       new Error(e),
       {
         contexts: {
@@ -53,7 +54,7 @@ test("Errors", async (t) => {
         },
       },
     ]);
-    deepStrictEqual(captureException.mock.calls[1].arguments, [
+    deepStrictEqual(Sentry.captureException.mock.calls[1].arguments, [
       new Error(e),
       {
         contexts: {
@@ -65,7 +66,7 @@ test("Errors", async (t) => {
         },
       },
     ]);
-    deepStrictEqual(captureException.mock.calls[2].arguments, [
+    deepStrictEqual(Sentry.captureException.mock.calls[2].arguments, [
       new Error(e),
       {
         contexts: {
@@ -78,7 +79,7 @@ test("Errors", async (t) => {
         },
       },
     ]);
-    deepStrictEqual(captureException.mock.calls[3].arguments, [
+    deepStrictEqual(Sentry.captureException.mock.calls[3].arguments, [
       new Error(e),
       {
         contexts: {
@@ -91,7 +92,7 @@ test("Errors", async (t) => {
         },
       },
     ]);
-    deepStrictEqual(captureException.mock.calls[4].arguments, [
+    deepStrictEqual(Sentry.captureException.mock.calls[4].arguments, [
       new Error(e),
       {
         contexts: {
@@ -116,19 +117,19 @@ test("Errors", async (t) => {
           { status: 500 }
         )
     );
-    const { captureException } = initSentry(
-      (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
-        errors: true,
-      }))
-    );
+    const Sentry = getSentryMock();
+    integration = supabaseIntegration(Supabase.SupabaseClient, Sentry, {
+      errors: true,
+    });
+    integration.setupOnce(() => {});
 
     await supabase.from("mock-table").select().eq("id", 42);
-    strictEqual(captureException.mock.calls.length, 1);
+    strictEqual(Sentry.captureException.mock.calls.length, 1);
 
     const expectedErr = new Error("Invalid response");
     expectedErr.code = "PGRST116";
     expectedErr.details = "Something went wrong";
-    deepStrictEqual(captureException.mock.calls[0].arguments, [
+    deepStrictEqual(Sentry.captureException.mock.calls[0].arguments, [
       expectedErr,
       {
         contexts: {
@@ -145,24 +146,24 @@ test("Errors", async (t) => {
     async () => {
       const e = "Invalid response";
       const supabase = initSupabase(() => new Response(e, { status: 404 }));
-      const { captureException } = initSentry(
-        (integration = new SupabaseIntegration(Supabase.SupabaseClient, {
-          errors: true,
-          sanitizeBody(table, key, value) {
-            switch (key) {
-              case "password":
-                return "<redacted>";
-              case "token":
-                return "<nope>";
-              case "secret":
-                return "<uwatm8>";
-              default: {
-                return value;
-              }
+      const Sentry = getSentryMock();
+      integration = supabaseIntegration(Supabase.SupabaseClient, Sentry, {
+        errors: true,
+        sanitizeBody(table, key, value) {
+          switch (key) {
+            case "password":
+              return "<redacted>";
+            case "token":
+              return "<nope>";
+            case "secret":
+              return "<uwatm8>";
+            default: {
+              return value;
             }
-          },
-        }))
-      );
+          }
+        },
+      });
+      integration.setupOnce(() => {});
 
       await supabase
         .from("mock-table")
@@ -175,10 +176,10 @@ test("Errors", async (t) => {
         .update({ user: "picklerick", secret: "whoops" })
         .eq("id", 42);
 
-      strictEqual(captureException.mock.calls.length, 3);
+      strictEqual(Sentry.captureException.mock.calls.length, 3);
 
       {
-        const arg = captureException.mock.calls[0].arguments[1];
+        const arg = Sentry.captureException.mock.calls[0].arguments[1];
         deepStrictEqual(arg.contexts.supabase.body, {
           user: "picklerick",
           password: "<redacted>",
@@ -186,7 +187,7 @@ test("Errors", async (t) => {
       }
 
       {
-        const arg = captureException.mock.calls[1].arguments[1];
+        const arg = Sentry.captureException.mock.calls[1].arguments[1];
         deepStrictEqual(arg.contexts.supabase.body, {
           user: "picklerick",
           token: "<nope>",
@@ -194,7 +195,7 @@ test("Errors", async (t) => {
       }
 
       {
-        const arg = captureException.mock.calls[2].arguments[1];
+        const arg = Sentry.captureException.mock.calls[2].arguments[1];
         deepStrictEqual(arg.contexts.supabase.body, {
           user: "picklerick",
           secret: "<uwatm8>",
