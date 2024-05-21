@@ -319,6 +319,7 @@ npm run test
 ## Publishing
 
 ```sh
+# Add new files to package.json#files if applicable
 npm version <patch|minor|major>
 git push
 npm publish
