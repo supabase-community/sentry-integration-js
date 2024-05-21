@@ -1,6 +1,6 @@
 {
   "name": "@supabase/sentry-js-integration",
-  "version": "0.2.0-beta",
+  "version": "0.2.0-beta.2",
   "description": "Supabase integration for Sentry JavaScript SDK",
   "license": "MIT",
   "homepage": "https://github.com/supabase-community/sentry-integration-js",
