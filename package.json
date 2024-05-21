@@ -23,7 +23,10 @@
   },
   "files": [
     "index.js",
-    "index.d.ts"
+    "index.d.ts",
+    "common.js",
+    "v7.js",
+    "v8.js"
   ],
   "scripts": {
     "lint": "npx eslint .",
