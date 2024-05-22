@@ -2,6 +2,14 @@ export function isPlainObject(wat) {
   return Object.prototype.toString.call(wat) === "[object Object]";
 }
 
+export const AVAILABLE_OPERATIONS = [
+  "select",
+  "insert",
+  "upsert",
+  "update",
+  "delete",
+];
+
 export const DEFAULT_OPTIONS = {
   tracing: true,
   breadcrumbs: true,
@@ -47,14 +55,6 @@ export function validateOption(availableOptions, key, value) {
     );
   }
 }
-
-export const AVAILABLE_OPERATIONS = [
-  "select",
-  "insert",
-  "upsert",
-  "update",
-  "delete",
-];
 
 export function extractOperation(method, headers = {}) {
   switch (method) {
