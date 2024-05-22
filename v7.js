@@ -5,7 +5,7 @@ import {
   isPlainObject,
   translateFiltersIntoMethods,
   validateOption,
-} from "./common";
+} from "./common.js";
 
 export class SupabaseIntegration {
   static id = "SupabaseIntegration";

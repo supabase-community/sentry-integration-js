@@ -5,7 +5,7 @@ import {
   isPlainObject,
   translateFiltersIntoMethods,
   validateOption,
-} from "./common";
+} from "./common.js";
 
 export function supabaseIntegration(SupabaseClient, Sentry, userOptions = {}) {
   if (!SupabaseClient) {
