@@ -35,7 +35,7 @@ Sentry.init({
 ```
 */
 export function supabaseIntegration(
-  clientConstructor: typeof SupabaseClient,
+  SupabaseClient: any,
   SentryNamespace: {
     startInactiveSpan: (...args: any[]) => any;
     captureException: (...args: any[]) => any;
@@ -69,10 +69,7 @@ Sentry.init({
 */
 export class SupabaseIntegration implements Integration {
   name: string;
-  constructor(
-    clientConstructor: typeof SupabaseClient,
-    options?: Partial<IntegrationOptions>
-  );
+  constructor(SupabaseClient: any, options?: Partial<IntegrationOptions>);
   setupOnce(): void;
   setupOnce(
     addGlobalEventProcessor: (callback: EventProcessor) => void,
