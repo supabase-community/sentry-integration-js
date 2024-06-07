@@ -122,31 +122,31 @@ See https://github.com/supabase-community/sentry-integration-js/blob/master/inde
 
 ### Removing duplicated http/fetch spans
 
-If you are using built-in `Http`, `Fetch` or `Undici` integrations in your current Sentry setup, you might want to skip some of the spans that will be already covered by `SupabaseIntegration`. Here's a quick snippet how to do that:
+If you are using built-in `Http`, `Fetch` or `nativeNodeFetchIntegration` integrations in your current Sentry setup, you might want to skip some of the spans that will be already covered by `supabaseIntegration`. Here's a quick snippet how to do that:
 
 ```js
 import * as Sentry from "@sentry/browser";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SupabaseIntegration } from "@supabase/sentry-js-integration";
+import { supabaseIntegration } from "@supabase/sentry-js-integration";
 
 Sentry.init({
   dsn: SENTRY_DSN,
   integrations: [
-    new SupabaseIntegration(SupabaseClient, {
+    supabaseIntegration(SupabaseClient, Sentry, {
       tracing: true,
       breadcrumbs: true,
       errors: true,
     }),
 
     // @sentry/browser
-    new Sentry.BrowserTracing({
+    Sentry.browserTracingIntegration({
       shouldCreateSpanForRequest: (url) => {
         return !url.startsWith(`${SUPABASE_URL}/rest`);
       },
     }),
 
     // or @sentry/node
-    new Sentry.Integrations.Http({
+    Sentry.httpIntegration({
       tracing: {
         shouldCreateSpanForRequest: (url) => {
           return !url.startsWith(`${SUPABASE_URL}/rest`);
@@ -155,14 +155,14 @@ Sentry.init({
     }),
 
     // or @sentry/node with Fetch support
-    new Sentry.Integrations.Undici({
+    Sentry.nativeNodeFetchIntegration({
       shouldCreateSpanForRequest: (url) => {
         return !url.startsWith(`${SUPABASE_URL}/rest`);
       },
     }),
 
     // or @sentry/WinterCGFetch for Next.js Middleware & Edge Functions
-    new Sentry.Integrations.WinterCGFetch({
+    Sentry.winterCGFetchIntegration({
       breadcrumbs: true,
       shouldCreateSpanForRequest: (url) => {
         return !url.startsWith(`${SUPABASE_URL}/rest`);
@@ -184,7 +184,7 @@ See this example for a setup with Next.js to cover browser, server, and edge env
 ```js sentry.client.config.ts
 import * as Sentry from "@sentry/nextjs";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SupabaseIntegration } from "@supabase/sentry-js-integration";
+import { supabaseIntegration } from "@supabase/sentry-js-integration";
 
 Sentry.init({
   dsn: SENTRY_DSN,
@@ -207,12 +207,12 @@ Sentry.init({
       maskAllText: true,
       blockAllMedia: true,
     }),
-    new SupabaseIntegration(SupabaseClient, {
+    supabaseIntegration(SupabaseClient, Sentry, {
       tracing: true,
       breadcrumbs: true,
       errors: true,
     }),
-    new Sentry.BrowserTracing({
+    Sentry.browserTracingIntegration({
       shouldCreateSpanForRequest: (url) => {
         return !url.startsWith(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest`);
       },
@@ -226,17 +226,17 @@ Sentry.init({
 ```js sentry.server.config.ts
 import * as Sentry from "@sentry/nextjs";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SupabaseIntegration } from "@supabase/sentry-js-integration";
+import { supabaseIntegration } from "@supabase/sentry-js-integration";
 
 Sentry.init({
   dsn: SENTRY_DSN,
   integrations: [
-    new SupabaseIntegration(SupabaseClient, {
+    supabaseIntegration(SupabaseClient, Sentry, {
       tracing: true,
       breadcrumbs: true,
       errors: true,
     }),
-    new Sentry.Integrations.Undici({
+    Sentry.nativeNodeFetchIntegration({
       shouldCreateSpanForRequest: (url) => {
         console.log(
           "server",
@@ -261,17 +261,17 @@ Sentry.init({
 ```js sentry.edge.config.ts
 import * as Sentry from "@sentry/nextjs";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SupabaseIntegration } from "@supabase/sentry-js-integration";
+import { supabaseIntegration } from "@supabase/sentry-js-integration";
 
 Sentry.init({
   dsn: SENTRY_DSN,
   integrations: [
-    new SupabaseIntegration(SupabaseClient, {
+    supabaseIntegration(SupabaseClient, Sentry, {
       tracing: true,
       breadcrumbs: true,
       errors: true,
     }),
-    new Sentry.Integrations.WinterCGFetch({
+    Sentry.winterCGFetchIntegration({
       breadcrumbs: true,
       shouldCreateSpanForRequest: (url) => {
         return !url.startsWith(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest`);
@@ -284,6 +284,18 @@ Sentry.init({
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: true,
 });
+```
+
+```js instrumentation.ts
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./sentry.server.config');
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./sentry.edge.config');
+  }
+}
 ```
 
 Afterward build your application (`npm run build`) and start it locally (`npm run start`). You will now see the transactions being logged in the terminal when making supabase-js requests.
