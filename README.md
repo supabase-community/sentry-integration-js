@@ -111,16 +111,16 @@ Sentry.init({
     // or @sentry/node
     Sentry.httpIntegration({
       tracing: {
-        shouldCreateSpanForRequest: (url) => {
-          return !url.startsWith(`${SUPABASE_URL}/rest`);
+        ignoreOutgoingRequests: (url) => {
+          return url.startsWith(`${SUPABASE_URL}/rest`);
         },
       },
     }),
 
     // or @sentry/node with Fetch support
     Sentry.nativeNodeFetchIntegration({
-      shouldCreateSpanForRequest: (url) => {
-        return !url.startsWith(`${SUPABASE_URL}/rest`);
+      ignoreOutgoingRequests: (url) => {
+        return url.startsWith(`${SUPABASE_URL}/rest`);
       },
     }),
 
@@ -200,13 +200,13 @@ Sentry.init({
       errors: true,
     }),
     Sentry.nativeNodeFetchIntegration({
-      shouldCreateSpanForRequest: (url) => {
+      ignoreOutgoingRequests: (url) => {
         console.log(
           "server",
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest`,
           url
         );
-        return !url.startsWith(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest`);
+        return url.startsWith(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest`);
       },
     }),
   ],
