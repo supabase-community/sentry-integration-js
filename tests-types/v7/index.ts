@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/browser";
+import * as Sentry from "@sentry/node";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { SupabaseIntegration } from "@supabase/sentry-js-integration";
 

@@ -37,8 +37,8 @@
     "@supabase/supabase-js": "2.x"
   },
   "devDependencies": {
-    "@supabase/supabase-js": "2.43.2",
-    "eslint": "^8.56.0"
+    "@supabase/supabase-js": "2.45.2",
+    "eslint": "8.57.0"
   },
   "eslintConfig": {
     "extends": "eslint:recommended",

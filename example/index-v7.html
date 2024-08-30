@@ -5,8 +5,8 @@
       {
         "imports": {
           "@sentry/browser": "https://esm.sh/@sentry/browser@7.115.0",
-          "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.43.2",
-          "@supabase/sentry-js-integration": "./integration.js"
+          "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.2",
+          "@supabase/sentry-js-integration": "./v7.js"
         }
       }
     </script>
@@ -32,11 +32,11 @@
           }),
         ],
         beforeSend(event) {
-          console.log("Captured exception:", event);
+          console.log("Captured exception:\n", event);
           return null; // Do not send captured exception
         },
         beforeSendTransaction(event) {
-          console.log("Captured transaction:", event);
+          console.log("Captured transaction:\n", event);
           return null; // Do not send transaction
         },
       });

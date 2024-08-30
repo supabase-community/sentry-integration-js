@@ -3,10 +3,9 @@
     "test": "npx tsc --noemit index.ts"
   },
   "dependencies": {
-    "@sentry/browser": "^8.2.1",
-    "@sentry/types": "^8.2.1",
+    "@sentry/node": "8.27.0",
     "@supabase/sentry-js-integration": "file:../../.",
-    "@supabase/supabase-js": "^2.43.2",
-    "typescript": "^5.4.5"
+    "@supabase/supabase-js": "2.45.2",
+    "typescript": "5.5.4"
   }
 }
