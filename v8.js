@@ -164,11 +164,14 @@ export function supabaseIntegration(SupabaseClient, Sentry, userOptions = {}) {
             }
 
             span = Sentry.startInactiveSpan({
-              description,
+              name: "supabase",
               op: `db.${operation}`,
-              origin: "auto.db.supabase",
-              data,
+              attributes: data,
             });
+            span.setAttribute(
+              Sentry.SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN,
+              "auto.db.supabase"
+            );
           }
 
           return Reflect.apply(target, thisArg, [])
