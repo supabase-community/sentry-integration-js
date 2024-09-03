@@ -5,14 +5,12 @@ import { getSentryMock, initSupabase } from "./mocks.js";
 import { supabaseIntegration } from "../../v8.js";
 import Supabase from "@supabase/supabase-js";
 
-const COMMON_SPAN_PAYLOAD = {
-  origin: "auto.db.supabase",
-};
-const COMMON_SPAN_DATA = {
+const COMMON_SPAN_ATTRIBUTES = {
   "db.schema": "public",
   "db.table": "mock-table",
   "db.url": "http://mock-url.com",
   "db.sdk": "supabase-js-node/2.45.2",
+  origin: "auto.db.supabase",
 };
 
 test("Tracing", async (t) => {
@@ -56,66 +54,61 @@ test("Tracing", async (t) => {
       strictEqual(Sentry.end.mock.calls.length, 5);
 
       deepStrictEqual(Sentry.startInactiveSpan.mock.calls[0].arguments[0], {
-        ...COMMON_SPAN_PAYLOAD,
-        data: {
-          ...COMMON_SPAN_DATA,
+        attributes: {
+          ...COMMON_SPAN_ATTRIBUTES,
           "db.query": [
             "select(*)",
             "lt(id, 42)",
             "gt(id, 20)",
             "not(id, eq.32)",
           ],
+          op: "db.select",
         },
-        description: "from(mock-table)",
-        op: "db.select",
+        name: "from(mock-table)",
       });
 
       deepStrictEqual(Sentry.startInactiveSpan.mock.calls[1].arguments[0], {
-        ...COMMON_SPAN_PAYLOAD,
-        data: {
-          ...COMMON_SPAN_DATA,
+        attributes: {
+          ...COMMON_SPAN_ATTRIBUTES,
           "db.body": {
             id: 42,
           },
+          op: "db.insert",
         },
-        description: "from(mock-table)",
-        op: "db.insert",
+        name: "from(mock-table)",
       });
 
       deepStrictEqual(Sentry.startInactiveSpan.mock.calls[2].arguments[0], {
-        ...COMMON_SPAN_PAYLOAD,
-        data: {
-          ...COMMON_SPAN_DATA,
+        attributes: {
+          ...COMMON_SPAN_ATTRIBUTES,
           "db.body": {
             id: 42,
           },
           "db.query": ["select(id,name)"],
+          op: "db.upsert",
         },
-        description: "from(mock-table)",
-        op: "db.upsert",
+        name: "from(mock-table)",
       });
 
       deepStrictEqual(Sentry.startInactiveSpan.mock.calls[3].arguments[0], {
-        ...COMMON_SPAN_PAYLOAD,
-        data: {
-          ...COMMON_SPAN_DATA,
+        attributes: {
+          ...COMMON_SPAN_ATTRIBUTES,
           "db.query": ["eq(id, 42)", "or(id.eq.8)", "foo.or(id.eq.42)"],
           "db.body": {
             id: 1337,
           },
+          op: "db.update",
         },
-        description: "from(mock-table)",
-        op: "db.update",
+        name: "from(mock-table)",
       });
 
       deepStrictEqual(Sentry.startInactiveSpan.mock.calls[4].arguments[0], {
-        ...COMMON_SPAN_PAYLOAD,
-        data: {
-          ...COMMON_SPAN_DATA,
+        attributes: {
+          ...COMMON_SPAN_ATTRIBUTES,
           "db.query": ["eq(id, 42)"],
+          op: "db.delete",
         },
-        description: "from(mock-table)",
-        op: "db.delete",
+        name: "from(mock-table)",
       });
 
       deepStrictEqual(
@@ -228,7 +221,7 @@ test("Tracing", async (t) => {
     strictEqual(Sentry.end.mock.calls.length, 1);
 
     const arg = Sentry.startInactiveSpan.mock.calls[0].arguments[0];
-    deepStrictEqual(arg.data["db.query"], ["select(*)", "eq(id, 1337)"]);
+    deepStrictEqual(arg.attributes["db.query"], ["select(*)", "eq(id, 1337)"]);
   });
 
   await t.test(
@@ -273,7 +266,7 @@ test("Tracing", async (t) => {
 
       {
         const arg = Sentry.startInactiveSpan.mock.calls[0].arguments[0];
-        deepStrictEqual(arg.data["db.body"], {
+        deepStrictEqual(arg.attributes["db.body"], {
           user: "picklerick",
           password: "<redacted>",
         });
@@ -281,7 +274,7 @@ test("Tracing", async (t) => {
 
       {
         const arg = Sentry.startInactiveSpan.mock.calls[1].arguments[0];
-        deepStrictEqual(arg.data["db.body"], {
+        deepStrictEqual(arg.attributes["db.body"], {
           user: "picklerick",
           token: "<nope>",
         });
@@ -289,7 +282,7 @@ test("Tracing", async (t) => {
 
       {
         const arg = Sentry.startInactiveSpan.mock.calls[2].arguments[0];
-        deepStrictEqual(arg.data["db.body"], {
+        deepStrictEqual(arg.attributes["db.body"], {
           user: "picklerick",
           secret: "<uwatm8>",
         });
