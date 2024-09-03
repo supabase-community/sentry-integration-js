@@ -148,30 +148,27 @@ export function supabaseIntegration(SupabaseClient, Sentry, userOptions = {}) {
           let span;
 
           if (options.tracing && shouldCreateSpan) {
-            const data = {
+            const attributes = {
               "db.table": table,
               "db.schema": thisArg.schema,
               "db.url": thisArg.url.origin,
               "db.sdk": thisArg.headers["X-Client-Info"],
+              [Sentry.SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN]: "auto.db.supabase",
+              [Sentry.SEMANTIC_ATTRIBUTE_SENTRY_OP]: `db.${operation}`,
             };
 
             if (query.length) {
-              data["db.query"] = query;
+              attributes["db.query"] = query;
             }
 
             if (Object.keys(body).length) {
-              data["db.body"] = body;
+              attributes["db.body"] = body;
             }
 
             span = Sentry.startInactiveSpan({
-              name: "supabase",
-              op: `db.${operation}`,
-              attributes: data,
+              name: description,
+              attributes,
             });
-            span.setAttribute(
-              Sentry.SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN,
-              "auto.db.supabase"
-            );
           }
 
           return Reflect.apply(target, thisArg, [])

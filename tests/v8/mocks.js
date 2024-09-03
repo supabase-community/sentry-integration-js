@@ -30,5 +30,7 @@ export function getSentryMock() {
     startInactiveSpan,
     captureException,
     addBreadcrumb,
+    SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN: "origin",
+    SEMANTIC_ATTRIBUTE_SENTRY_OP: "op",
   };
 }
